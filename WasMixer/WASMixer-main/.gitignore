@@ -1,0 +1,43 @@
+/.idea
+**/WASMixer.egg-info
+**/__pycache__/
+**/.python-version
+# Byte-compiled / optimized / DLL Python files
+__pycache__/
+__pycache__/**
+*.py[cod]
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Test, coverage, and log files
+*.log
+*.coverage
+.coverage
+htmlcov/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Other common garbage
+*.swp
+*.swo
+*~
+
+# WASMixer CLI output
+*_mixr.wasm

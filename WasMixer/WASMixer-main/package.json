@@ -1,0 +1,22 @@
+{
+  "name": "wasmixer-main",
+  "version": "1.0.0",
+  "description": "WASMixer consists of two main functions: the data obfuscator and the code obfuscator. The data obfuscator randomizes readable names and encrypts/decrypts memory areas at runtime. The code obfuscator manipulates instructions and control flow through techniques like alias disruption, control flow flattening, and Collatz-based opaque predicates to thwart human reverse engineering and static analysis.",
+  "main": "run_browser_test.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@wasmer/wasi": "^1.2.2",
+    "@wasmer/wasmfs": "^0.12.0",
+    "minimist": "^1.2.8",
+    "puppeteer": "^24.32.1"
+  }
+}

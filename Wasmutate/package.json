@@ -1,0 +1,17 @@
+{
+  "name": "wasmutate",
+  "version": "1.0.0",
+  "description": "",
+  "main": "run_browser_test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "minimist": "^1.2.8",
+    "puppeteer": "^24.30.0"
+  }
+}

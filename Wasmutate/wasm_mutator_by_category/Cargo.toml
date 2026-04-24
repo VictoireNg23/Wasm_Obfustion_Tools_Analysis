@@ -1,0 +1,10 @@
+[package]
+name = "wasm_mutator_by_category"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+wasm-mutate = "0.240.0"
+anyhow = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+rand = "0.8"
