@@ -201,6 +201,6 @@ Anonymous
 
 =======
 # Wasm_Obfuscator_2026
-This repository contains scripts and tools to run two WebAssembly obfuscators — WASMixer and Wasmutate
+This repository contains scripts and tools to run three WebAssembly obfuscators — WASMixer, Swamped and Wasmutate
 
 
