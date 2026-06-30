@@ -1,0 +1,19 @@
+(library
+  (name middlend)
+  (libraries util il)
+  (modules
+    sub
+    totalize
+    unthe
+    sideconditions
+    typefamilyremoval
+    else
+    undep
+    utils
+    subexpansion
+    uncaseremoval
+    aliasDemut
+    improveids
+    ite
+  )
+)

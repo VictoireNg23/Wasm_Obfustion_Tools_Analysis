@@ -5,3 +5,5 @@ swamped/Results_csv/Results_swamped_Wasmer/WasmGuard_ben_cli_spectec.csv
 *.csv
 swamped/Results_csv/
 Wasmutate/WasmMutate_Results/Results_Csv/
+swamped/Results_csv/
+Wasmutate/WasmMutate_Results/Results_Csv/

@@ -1,0 +1,71 @@
+sudo apt-get update
+sudo apt-get install -y opam ocaml m4 pkg-config libgmp-dev python3 python3-pip
+
+opam init -y
+eval $(opam env)
+
+opam switch create 5.0.0
+eval $(opam env)
+
+opam install -y dune menhir mdx zarith
+
+
+cd spectec/interpreter
+make
+
+
+---------------run wasmixer---------------
+----Wasmtime
+python3 analyze_spectec_wasmixer.py \
+  --input-csv ./WasMixer/WasMixer_Results/Results_csv/WasMixer_Results_Wasmtime/input_dataset.csv \
+  --output-csv ./WasMixer_Results/Results_csv/WasMixer_Results_Wasmtime/input_dataset_spectec.csv \
+  --dataset-root ./Dataset_officiel_wasm/dataset_name \
+  --outdir-root ./WasMixer/WasMixer_Results/wasmtime/dataset_name
+  --cores 200
+
+---wasmer
+python3 analyze_spectec_wasmixer.py \
+  --input-csv ./WasMixer/WasMixer_Results/Results_csv/WasMixer_Results_wasmer/input_dataset.csv \
+  --output-csv ./WasMixer_Results/Results_csv/WasMixer_Results_wasmer/input_dataset_spectec.csv \
+  --dataset-root ./Dataset_officiel_wasm/dataset_name \
+  --outdir-root ./WasMixer/WasMixer_Results/Wasmer/dataset_name
+  --cores 200
+
+
+---------------run wasmutate---------------
+----Wasmtime
+python3 analyze_spectec_wasmmutate.py \
+  --input-csv ./WasmMutate/WasmMutate_Results/Results_Csv/Results_Spectec_Wasmutate_Wasmtime/input_dataset.csv \
+  --output-csv ./WasmMutate/WasmMutate_Results/Results_Csv/Results_Spectec_Wasmutate_Wasmtime/input_dataset_spectec.csv \
+  --dataset-root ./Dataset_officiel_wasm/dataset_name \
+  --outdir-root ./Wasmutate/WasmMutate_Results_wasmtime/dataset_name
+  --cores 200
+
+
+---wasmer
+python3 analyze_spectec_wasmmutate.py \
+  --input-csv ./WasmMutate_Results/Results_Csv/Results_Spectec_Wasmutate_Wasmer/input_dataset.csv \
+  --output-csv ./WasmMutate_Results/Results_Csv/Results_Spectec_Wasmutate_Wasmer/input_dataset_spectec.csv \
+  --dataset-root ./Dataset_officiel_wasm/dataset_name \
+  --outdir-root ./Wasmutate/WasmMutate_Results_wasmer/dataset_name
+  --cores 200
+
+
+
+---------------run swamped---------------
+----Wasmtime
+python3 analyze_spectec_swamped.py \
+  --input-csv ./Results_csv/Results_swamped_wasmtime/input_dataset.csv \
+  --output-csv ./Results_csv/Results_swamped_wasmtime/input_dataset_spectec.csv \
+  --dataset-root ./Dataset_officiel_wasm/dataset_name \
+  --outdir-root ./Results_swamped/Wasmtime/dataset_name
+  --cores 200
+
+
+---wasmer
+python3 analyze_spectec_swamped.py \
+  --input-csv ./Results_csv/Results_swamped_Wasmer/input_dataset.csv \
+  --output-csv ./Results_csv/Results_swamped_Wasmer/input_dataset_spectec.csv \
+  --dataset-root ./Dataset_officiel_wasm/dataset_name \
+  --outdir-root ./Results_swamped/Wasmer/dataset_name
+  --cores 200
