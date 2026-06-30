@@ -1,0 +1,94 @@
+(func $wade_decrypt (param $offset i32) (param $length i32)
+  (local $i i32)
+  (local $key_idx i32)
+  (local $key_byte i32)
+  (local $mem_byte i32)
+
+  (block $exit
+    (loop $loop
+      ;; if i >= length → break
+      (br_if $exit (i32.ge_u (local.get $i) (local.get $length)))
+
+      ;; key_idx = i % 18
+      (local.set $key_idx
+        (i32.rem_u (local.get $i) (i32.const 18))
+      )
+
+      ;; key_byte = match key_idx
+      (local.set $key_byte
+        (select (i32.const 119) (i32.const 0) (i32.eq (local.get $key_idx) (i32.const 0)))
+      )
+      (local.set $key_byte
+        (select (i32.const 97) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 1)))
+      )
+      (local.set $key_byte
+        (select (i32.const 100) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 2)))
+      )
+      (local.set $key_byte
+        (select (i32.const 101) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 3)))
+      )
+      (local.set $key_byte
+        (select (i32.const 100) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 4)))
+      )
+      (local.set $key_byte
+        (select (i32.const 97) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 5)))
+      )
+      (local.set $key_byte
+        (select (i32.const 116) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 6)))
+      )
+      (local.set $key_byte
+        (select (i32.const 97) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 7)))
+      )
+      (local.set $key_byte
+        (select (i32.const 101) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 8)))
+      )
+      (local.set $key_byte
+        (select (i32.const 110) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 9)))
+      )
+      (local.set $key_byte
+        (select (i32.const 99) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 10)))
+      )
+      (local.set $key_byte
+        (select (i32.const 114) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 11)))
+      )
+      (local.set $key_byte
+        (select (i32.const 121) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 12)))
+      )
+      (local.set $key_byte
+        (select (i32.const 112) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 13)))
+      )
+      (local.set $key_byte
+        (select (i32.const 116) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 14)))
+      )
+      (local.set $key_byte
+        (select (i32.const 105) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 15)))
+      )
+      (local.set $key_byte
+        (select (i32.const 111) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 16)))
+      )
+      (local.set $key_byte
+        (select (i32.const 110) (local.get $key_byte) (i32.eq (local.get $key_idx) (i32.const 17)))
+      )
+
+      ;; mem_byte = memory[offset + i]
+      (local.set $mem_byte
+        (i32.load8_u
+          (i32.add (local.get $offset) (local.get $i))
+        )
+      )
+
+      ;; store xor'd value
+      (i32.store8
+        (i32.add (local.get $offset) (local.get $i))
+        (i32.xor (local.get $mem_byte) (local.get $key_byte))
+      )
+
+      ;; i++
+      (local.set $i
+        (i32.add (local.get $i) (i32.const 1))
+      )
+
+      (br $loop)
+    )
+  )
+)
