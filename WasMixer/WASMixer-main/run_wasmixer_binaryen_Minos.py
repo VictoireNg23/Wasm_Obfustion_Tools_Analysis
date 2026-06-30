@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# run_wasmixer.py
+# run_wasmixer_binaryen_Minos.py
 """
-Master script: builds tasks and runs wasm_obfuscator.process_one in parallel.
-
+Master script: builds tasks and runs wasm_metrics_binaryen_Minos.process_one
+in parallel. 
 """
 
 import argparse, os, sys, csv, itertools, multiprocessing, uuid, time, shutil, subprocess
@@ -10,10 +10,10 @@ from pathlib import Path
 import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent.resolve()))
-from wasm_metrics_binaryen import process_one
+from wasm_metrics_binaryen_Minos import process_one
 
-TMP_ROOT = Path("./WasMixer/tmp_wasm_realworld_program")
-CSV_PATH = Path("./WasMixer/WasMixer_Results/Results_csv/WasMixer_Results_Wasmtime/realworld_program.csv")
+TMP_ROOT = Path("./WasMixer/tmp_wasm_Minos")
+CSV_PATH = Path("./WasMixer/WasMixer_Results/Results_csv/WasMixer_Results_Wasmtime/Minos.csv")
 
 BATCH_SIZE = 50  # number of rows to buffer before writing to disk
 

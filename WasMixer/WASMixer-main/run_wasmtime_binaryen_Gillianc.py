@@ -2,8 +2,6 @@
 # run_wasmixer.py
 """
 Master script: builds tasks and runs wasm_obfuscator.process_one in parallel.
-Resumes safely from an existing CSV: skips already processed samples.
-Uses buffered batch writing to avoid IO contention and data loss.
 """
 
 import argparse, os, sys, csv, itertools, multiprocessing, uuid, time, shutil, subprocess
@@ -22,9 +20,16 @@ BATCH_SIZE = 50  # number of rows to buffer before writing to disk
 FIELDS = [
     "sample","relpath","obfuscation_transformation","mutant_id","obf_time",
     "size_orig","size_obf","call_ind_orig","call_ind_obf","max_nesting_orig","max_nesting_obf",
-    "valid_orig","valid_obf","run_orig","run_obf","run_time_orig","run_time_obf",
+    "valid_orig","valid_obf",
+    "run_orig","run_obf","run_time_orig","run_time_obf","run_func_orig","run_func_obf",
     "disassembly_ok_orig","disassembly_ok_obf","wat_similarity","cfg_similarity",
-    "func_symbols_orig","func_symbols_obf","type_symbols_orig","type_symbols_obf"
+    "func_symbols_orig","func_symbols_obf","type_symbols_orig","type_symbols_obf",
+    # Deobfuscation Vulnerability (proxy for adversarial cost of entry)
+    "deobf_wabt_orig","deobf_wabt_obf",
+    "deobf_binaryen_orig","deobf_binaryen_obf",
+    "deobf_ghidra_orig","deobf_ghidra_obf",
+    "deobf_ghidra_funcs_orig","deobf_ghidra_funcs_obf",
+    "deobf_score_orig","deobf_score_obf",
 ]
 
 
@@ -267,6 +272,8 @@ def main():
                     "run_obf": res.get("run_obf"),
                     "run_time_orig": res.get("run_time_orig"),
                     "run_time_obf": res.get("run_time_obf"),
+                    "run_func_orig": res.get("run_func_orig"),
+                    "run_func_obf": res.get("run_func_obf"),
                     "disassembly_ok_orig": res.get("disassembly_ok_orig"),
                     "disassembly_ok_obf": res.get("disassembly_ok_obf"),
                     "wat_similarity": res.get("wat_similarity"),
@@ -275,6 +282,16 @@ def main():
                     "func_symbols_obf": res.get("func_symbols_obf"),
                     "type_symbols_orig": res.get("type_symbols_orig"),
                     "type_symbols_obf": res.get("type_symbols_obf"),
+                    "deobf_wabt_orig": res.get("deobf_wabt_orig"),
+                    "deobf_wabt_obf": res.get("deobf_wabt_obf"),
+                    "deobf_binaryen_orig": res.get("deobf_binaryen_orig"),
+                    "deobf_binaryen_obf": res.get("deobf_binaryen_obf"),
+                    "deobf_ghidra_orig": res.get("deobf_ghidra_orig"),
+                    "deobf_ghidra_obf": res.get("deobf_ghidra_obf"),
+                    "deobf_ghidra_funcs_orig": res.get("deobf_ghidra_funcs_orig"),
+                    "deobf_ghidra_funcs_obf": res.get("deobf_ghidra_funcs_obf"),
+                    "deobf_score_orig": res.get("deobf_score_orig"),
+                    "deobf_score_obf": res.get("deobf_score_obf"),
                 }
 
                 buffer.append(row)
@@ -287,7 +304,8 @@ def main():
 
                 print(
                     f"Processed {row['relpath']} [{row['obfuscation_transformation']}] "
-                    f"-> obf:{row['valid_obf']} run:{row['run_obf']}"
+                    f"-> obf:{row['valid_obf']} run:{row['run_obf']} "
+                    f"deobf_score_obf:{row['deobf_score_obf']}"
                 )
 
         if buffer:
@@ -301,6 +319,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-

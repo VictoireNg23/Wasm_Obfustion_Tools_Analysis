@@ -12,21 +12,21 @@ WebAssembly_Obfuscation_Tools/
 │   └── WASMixer-main/
 │       ├── run_wasmtime_binaryen_btree_manticore.py
 │       ├── run_wasmer_binaryen_btree_manticore.py
-│       └── ... (other dataset scripts)
+│       └── ... (other dataset scripts and cfg_similarity.py, deobfuscation_vulnerability.py, etc..) 
 ├── Wasmutate/
-│   ├── Run_Wasmmutate_Wasmtime_Btree_Manticore.sh
-│   ├── Run_Wasmmutate_Btree_Manticore_wasmer.sh
+│   ├── run_wasmmutate_binaryen.py
+│   ├── wasm_metrics_binaryen_mutate.py
 │   └── ... (other scripts)
 ├── Swamped/
-│   ├── Run_Swamped_Wasmtime_Btree_Manticore.py
-│   ├── Run_Swamped_wasmer_Btree_Manticore.py
-│   └── ... (other scripts)
+│   ├── swamped_metrics_binaryen.py
+│   ├── 
+│   └── ... (other scripts , cfg_similarity.py, deobfuscation_vulnerability.py, etc..) 
 ├── spectec/
 │   ├── analyse_spectec.py
 │   ├── 
 │   └── ... (other scripts)
 ├── Dataset_officiel_wasm/
-│   └── (8 datasets: Btree Manticore, GillianC, Programs, MineRay, Minos, Btree Programs, RealWorld Applications, BasicAlgorithm)
+│   └── (9 datasets: Btree Manticore, GillianC, Programs, MineRay, Minos, Btree Programs, RealWorld Applications, BasicAlgorithm, WasmGuard)
 ├── README.md
 
 ```
@@ -64,6 +64,9 @@ The WASMixer, Wasmutate and Swamped scripts support the following datasets:
 7. RealWorld Applications
 
 8. BasicAlgorithm
+
+9. WasmGuard
+
 
 ---
 
@@ -109,8 +112,8 @@ python3 run_wasmixer_binaryen_btree_manticore.py \
   --outdir /path/to/output \
   --wasmixer /path/to/WasMixer/WASMixer-main \
   --wabt-bin /usr/bin \
-  --timeout 60 \
-  --cores 70
+  --timeout 1800 \
+  --cores 200
 
 
 ### Example with Wasmer:
@@ -120,8 +123,8 @@ python3 run_wasmer_binaryen_btree_manticore.py \
   --outdir /path/to/output \
   --wasmixer /path/to/WasMixer/WASMixer-main \
   --wabt-bin /usr/bin \
-  --timeout 60 \
-  --cores 70
+  --timeout 1800 \
+  --cores 200
 
 
 Des scripts similaires existent pour chaque dataset.
@@ -184,7 +187,7 @@ bash Run_Wasmmutate_Btree_Manticore_wasmer.sh
 
 ### With Wasmtime & Wasmer :
 
-python3  Run_Swamped_Wasmer_Btree_Manticore.py
+python3  swamped_metrics_binaryen.py
 
 
 ## requirements_wasmixer.txt
