@@ -65,7 +65,7 @@ The WASMixer, Wasmutate and Swamped scripts support the following datasets:
 
 8. BasicAlgorithm
 
-9. WasmGuard
+9. WasmGuard (Don't forget to update the submodule `git submodule update --init`)
 
 
 ---
