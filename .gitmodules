@@ -1,0 +1,3 @@
+[submodule "Dataset_officiel_wasm/WasmMal"]
+	path = Dataset_officiel_wasm/WasmMal
+	url = https://github.com/Yuxia-Sun/WasmMal
