@@ -1,209 +1,418 @@
-# WebAssembly Obfuscation Framework: WASMixer & Wasmutate & Swamped
+# WebAssembly Obfuscation Framework: WasMixer, wasm-mutate and SWAMPED
 
-This repository contains scripts and tools to run two WebAssembly obfuscators — **WASMixer**, **Wasmutate** and **Swamped**— on multiple WebAssembly datasets in an experimental context (research, benchmarking, robustness evaluation, etc.).
+This repository contains the experimental framework used to evaluate three WebAssembly obfuscation and mutation approaches:
+
+* **WasMixer**
+* **wasm-mutate**
+* **SWAMPED**
+
+The framework provides scripts and analysis tools to apply transformations on WebAssembly (`.wasm`) binaries, measure their impact, and evaluate their robustness against analysis and reverse-engineering techniques.
+
+The repository is designed for research experiments, benchmarking, and comparative evaluation of WebAssembly obfuscation techniques.
 
 ---
 
-##  Repository Structure
-
-```text
-WebAssembly_Obfuscation_Tools/
-├── WasMixer/
-│   └── WASMixer-main/
-│       ├── run_wasmtime_binaryen_btree_manticore.py
-│       ├── run_wasmer_binaryen_btree_manticore.py
-│       └── ... (other dataset scripts and cfg_similarity.py, deobfuscation_vulnerability.py, etc..) 
-├── Wasmutate/
-│   ├── run_wasmmutate_binaryen.py
-│   ├── wasm_metrics_binaryen_mutate.py
-│   └── ... (other scripts)
-├── Swamped/
-│   ├── swamped_metrics_binaryen.py
-│   ├── 
-│   └── ... (other scripts , cfg_similarity.py, deobfuscation_vulnerability.py, etc..) 
-├── spectec/
-│   ├── analyse_spectec.py
-│   ├── 
-│   └── ... (other scripts)
-├── Dataset_officiel_wasm/
-│   └── (9 datasets: Btree Manticore, GillianC, Programs, MineRay, Minos, Btree Programs, RealWorld Applications, BasicAlgorithm, WasmGuard)
-├── README.md
+# Repository Structure
 
 ```
+WebAssembly_Obfuscation_Tools/
+
+├── WasMixer/
+│   └── wasmixer_pipeline/
+│       ├── run_wasmixer.py
+│       ├── metrics_worker.py
+│       ├── orig_metrics.py
+│       ├── cfg_similarity.py
+│       ├── cfg_from_wat.py
+│       ├── deobfuscation_vulnerability.py
+│       ├── wasm_runtime.py
+│       ├── browser_runner.js
+│       └── other analysis scripts
+
+├── wasm-mutate/
+│   └── wasmmutate_pipeline/
+│       ├── run_wasmmutate.py
+│       ├── metrics_worker.py
+│       ├── orig_metrics.py
+│       ├── cfg_similarity.py
+│       ├── cfg_from_wat.py
+│       ├── wasm_runtime.py
+│       ├── wasm_mutate_patch/
+│       └── other analysis scripts
+
+├── SWAMPED/
+│   └── swamped_pipeline/
+│       ├── run_swamped.py
+│       ├── metrics_worker.py
+│       ├── pipeline_core.py
+│       ├── orig_metrics.py
+│       ├── cfg_similarity.py
+│       ├── cfg_from_wat.py
+│       ├── wasm_runtime.py
+│       ├── browser_runner.js
+│       └── other analysis scripts
+
+├── spectec/
+│   └── spectec_pipeline/
+│       ├── spectec_common.py
+│       ├── spectec_analysis_wasmixer.py
+│       ├── spectec_analysis_wasmmutate.py
+│       ├── spectec_analysis_swamped.py
+│       └── wasm_runtime.py
+
+├── Dataset_officiel_wasm/
+│   └── WebAssembly datasets (.wasm files)
+
+└── README.md
+```
+
 ---
 
-##  Objective
+# Objectives
 
-This project allows you to:
+This framework allows you to:
 
-- obfuscate WebAssembly (.wasm) files using three Wasm obfuscators,
+* apply different WebAssembly obfuscation and mutation techniques;
+* evaluate several transformation strategies on large collections of `.wasm` binaries;
+* compare the impact of different execution engines:
 
-- evaluate different obfuscators and compare different execution engines (Wasmtime, Wasmer),
+  * Wasmtime;
+  * Wasmer;
+* measure structural modifications using:
 
-- analyze their robustness against reverse engineering.
-
-
----
-
-## Supported Datasets
-
-The WASMixer, Wasmutate and Swamped scripts support the following datasets:
-
-1. Btree Manticore
-
-2. GillianC
-
-3. Programs
-
-4. MineRay
-
-5. Minos
-
-6. Btree Programs
-
-7. RealWorld Applications
-
-8. BasicAlgorithm
-
-9. WasmGuard (Don't forget to update the submodule `git submodule update --init`)
-
+  * WAT similarity;
+  * CFG similarity;
+  * binary-level metrics;
+* evaluate behavioral preservation through runtime execution;
+* analyze resistance against reverse-engineering and recovery tools;
+* verify formal validity and semantic equivalence using SpecTec.
 
 ---
 
-## Installation – WASMixer
-System Prerequisites
+# Dataset
 
-### System Prerequisites
+The framework operates on WebAssembly binaries (`.wasm`).
 
+The dataset directory should contain WebAssembly modules used as input for the different evaluation pipelines.
 
+Example:
+
+```
+Dataset_officiel_wasm/
+
+├── sample1.wasm
+├── sample2.wasm
+├── sample3.wasm
+└── ...
+```
+
+The same dataset format can be used with WasMixer, wasm-mutate, and SWAMPED.
+
+---
+
+# Common Requirements
+
+## System dependencies
+
+Install the required WebAssembly tools:
+
+```bash
 sudo apt update
-sudo apt install -y nodejs npm wabt binaryen
 
+sudo apt install -y \
+    nodejs \
+    npm \
+    wabt \
+    binaryen
+```
 
-###  Install Emscripten
+Required tools:
 
+* WABT:
+
+  * `wasm2wat`
+  * `wat2wasm`
+  * `wasm-validate`
+
+* Binaryen:
+
+  * `wasm-dis`
+  * `wasm-opt`
+
+---
+
+## Install Emscripten
+
+Some datasets or preprocessing steps require WebAssembly compilation.
+
+```bash
 git clone https://github.com/emscripten-core/emsdk.git
+
 cd emsdk
+
 ./emsdk install latest
+
 ./emsdk activate latest
+
 source ./emsdk_env.sh
+```
 
+---
 
-###  Install WASMixer
-cd WasMixer/WASMixer-main
+# WasMixer Pipeline
+
+## Installation
+
+Install WasMixer:
+
+```bash
+cd WasMixer/wasmixer_pipeline
+
 pip install -e .
+```
 
+Install Python dependencies:
 
-### Verify Tools
+```bash
+pip install rapidfuzz numpy scipy networkx matplotlib
+```
 
+Verify required tools:
+
+```bash
 which wasm-dis
 which wasm2wat
 which wasm-opt
 which wasmer
 which wasmtime
+```
 
-## Execution – WASMixer
+---
 
+## Execution
 
-### Example with Wasmtime on the Btree Manticore dataset:
+Example using Wasmtime:
 
-python3 run_wasmixer_binaryen_btree_manticore.py \
-  --dataset /path/to/dataset \
-  --outdir /path/to/output \
-  --wasmixer /path/to/WasMixer/WASMixer-main \
-  --wabt-bin /usr/bin \
-  --timeout 1800 \
-  --cores 200
+```bash
+python3 run_wasmixer.py \
+    --dataset /path/to/dataset \
+    --outdir /path/to/output \
+    --wasmixer /path/to/WasMixer \
+    --wabt-bin /usr/bin \
+    --timeout 1800 \
+    --cores 200
+```
 
+Example using Wasmer:
 
-### Example with Wasmer:
+```bash
+python3 run_wasmixer.py \
+    --dataset /path/to/dataset \
+    --outdir /path/to/output \
+    --wasmixer /path/to/WasMixer \
+    --wasmer-bin /path/to/wasmer \
+    --wabt-bin /usr/bin \
+    --timeout 1800 \
+    --cores 200
+```
 
-python3 run_wasmer_binaryen_btree_manticore.py \
-  --dataset /path/to/dataset \
-  --outdir /path/to/output \
-  --wasmixer /path/to/WasMixer/WASMixer-main \
-  --wabt-bin /usr/bin \
-  --timeout 1800 \
-  --cores 200
+The pipeline automatically applies the selected WasMixer transformations and computes evaluation metrics.
 
+---
 
-Des scripts similaires existent pour chaque dataset.
+# wasm-mutate Pipeline
 
+## Installation
 
-## Installation – Wasmutate
+Install Rust:
 
-### Install Rust and Cargo
-
+```bash
 curl https://sh.rustup.rs -sSf | bash
-source ~/.cargo/env 
 
-### Install wasm-tools
+source ~/.cargo/env
+```
 
+Install WebAssembly tools:
+
+```bash
 cargo install wasm-tools
- 
-### Install Wasmtime
+```
 
+Install Wasmtime:
+
+```bash
 curl https://wasmtime.dev/install.sh -sSf | bash
+
 export PATH="$HOME/.wasmtime/bin:$PATH"
-echo 'export PATH="$HOME/.wasmtime/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
+```
 
+Install Wasmer:
 
-### Install Wasmtime
-
+```bash
 curl https://get.wasmer.io -sSfL | sh
-source ~/.bashrc
+```
 
+Verify installation:
 
-### Install WABT and Binaryen
-
-sudo apt update
-sudo apt install -y wabt binaryen
-
-
-### Final Verification
-
+```bash
 which cargo
 which wasm-tools
 which wasm2wat
 which wasm-opt
 which wasmtime
 which wasmer
+```
 
+---
 
-## Execution – Wasmutate
+## Execution
 
-### With Wasmtime:
+Example:
 
-bash Run_Wasmmutate_Wasmtime_Btree_Manticore.sh
+```bash
+python3 run_wasmmutate.py \
+    --dataset /path/to/dataset \
+    --outdir /path/to/output \
+    --mutator /path/to/wasm_mutator_by_category \
+    --wasmtime-bin /path/to/wasmtime \
+    --cores 200
+```
 
+or:
 
-### With Wasmer : 
+```bash
+python3 run_wasmmutate.py \
+    --dataset /path/to/dataset \
+    --outdir /path/to/output \
+    --mutator /path/to/wasm_mutator_by_category \
+    --wasmer-bin /path/to/wasmer \
+    --cores 200
+```
 
-bash Run_Wasmmutate_Btree_Manticore_wasmer.sh
+---
 
+# SWAMPED Pipeline
 
-## Execution – Swamped
+## Installation
 
-### With Wasmtime & Wasmer :
+Install Python dependencies:
 
-python3  swamped_metrics_binaryen.py
+```bash
+pip install rapidfuzz numpy scipy networkx matplotlib
+```
 
+Ensure that WABT, Binaryen, Wasmtime/Wasmer, and Node.js are available.
 
-## requirements_wasmixer.txt
+---
 
-rapidfuzz>=3.5.0
+## Execution
 
-## requirements_wasmutate.txt
+Example:
 
-Rust, wasm-tools, wasmtime, wasmer, wabt, binaryen
+```bash
+python3 run_swamped.py \
+    --dataset /path/to/dataset \
+    --outdir /path/to/output \
+    --swamped-cli /path/to/swamped_cli.py \
+    --cores 200
+```
 
-## Author
+The pipeline applies SWAMPED perturbation strategies and computes the corresponding structural and behavioral metrics.
+
+---
+
+# SpecTec Pipeline
+
+The SpecTec pipeline is shared by all three evaluation frameworks.
+
+It performs:
+
+* formal WebAssembly validity checking;
+* semantic equivalence analysis between original and transformed binaries.
+
+The pipeline does not generate new obfuscated binaries. It enriches existing experiment results.
+
+Directory:
+
+```
+spectec/
+└── spectec_pipeline/
+```
+
+Available scripts:
+
+```text
+spectec_analysis_wasmixer.py
+spectec_analysis_wasmmutate.py
+spectec_analysis_swamped.py
+```
+
+Example:
+
+```bash
+python3 spectec_analysis_wasmixer.py \
+    --dataset /path/to/dataset \
+    --input-csv results.csv \
+    --output-csv enriched_results.csv \
+    --obf-dir /path/to/output \
+    --spectec-bin /path/to/spectec
+```
+
+---
+
+# Evaluation Metrics
+
+The framework collects several categories of measurements:
+
+## Structural metrics
+
+* binary size;
+* instruction-level changes;
+* WAT similarity;
+* CFG similarity;
+* function and type information.
+
+## Runtime metrics
+
+* execution success;
+* execution time;
+* runtime compatibility;
+* browser execution traces.
+
+Supported runtimes:
+
+* Wasmtime;
+* Wasmer.
+
+## Reverse-engineering metrics
+
+* disassembly recovery;
+* function recovery;
+* deobfuscation analysis.
+
+## Formal analysis
+
+Using SpecTec:
+
+* specification validity;
+* semantic equivalence;
+* interpreter errors.
+
+---
+
+# Reproducibility Notes
+
+For large-scale experiments:
+
+* use local storage instead of network filesystems mounted with `noexec`;
+* keep generated binaries and temporary files on local disks;
+* ensure that the same dataset paths are used between generation and analysis steps;
+* keep the runtime configuration consistent when comparing Wasmtime and Wasmer.
+
+---
+
+# Author
 
 Anonymous
 
-=======
 # Wasm_Obfuscator_2026
-This repository contains scripts and tools to run three WebAssembly obfuscators — WASMixer, Swamped and Wasmutate
-
-
