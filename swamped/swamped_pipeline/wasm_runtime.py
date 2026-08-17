@@ -1,0 +1,215 @@
+#!/usr/bin/env python3
+# wasm_runtime.py
+"""
+Parameter-aware native execution of WebAssembly binaries via wasmtime/Wasmer.
+"""
+
+import re
+import time
+import subprocess
+from pathlib import Path
+
+DEFAULT_ARG_BY_TYPE = {
+    "i32": "1",
+    "i64": "1",
+    "f32": "1.0",
+    "f64": "1.0",
+}
+
+ARG_COUNT_MISMATCH_PATTERNS = (
+    re.compile(r"expected\s+\d+\s+argument", re.IGNORECASE),
+    re.compile(r"argument count mismatch", re.IGNORECASE),
+    re.compile(r"wrong number of (arguments|parameters)", re.IGNORECASE),
+)
+
+
+def run_cmd(cmd, timeout_s=None, input_text=None):
+    try:
+        p = subprocess.run(
+            cmd,
+            input=input_text,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=timeout_s,
+        )
+        return p.returncode, p.stdout, p.stderr
+    except subprocess.TimeoutExpired:
+        return -1, "", "timeout"
+    except FileNotFoundError as e:
+        return -2, "", f"command not found: {e}"
+
+
+_EXPORT_REF_RE = re.compile(r'\(export\s+"([^"]+)"\s+\(func\s+(\$\S+|\d+)\)\)')
+_INLINE_EXPORT_RE = re.compile(r'\(func\s+(\$\S+)\s*\(export\s+"([^"]+)"\)')
+_FUNC_HEADER_RE = re.compile(r'\(func\s+(\$\S+|\(;\d+;\))')
+_PARAM_RE = re.compile(r'\(param(?:\s+\$\S+)?((?:\s+\w+)+)\)')
+_TYPE_REF_RE = re.compile(r'\(type\s+(\$\S+|\d+)\)')
+_TYPE_DEF_RE = re.compile(r'\(type\s+(\$\S+|\d+)\s+\(func((?:\s*\(param(?:\s+\$\S+)?(?:\s+\w+)+\))*)')
+
+
+def list_func_exports(wat_text):
+    exports = {}
+    for name, fid in _EXPORT_REF_RE.findall(wat_text):
+        exports[name] = fid
+    for fid, name in _INLINE_EXPORT_RE.findall(wat_text):
+        exports[name] = fid
+    return exports
+
+
+def _params_from_inline_header(func_block_text):
+    params = []
+    for group in _PARAM_RE.findall(func_block_text):
+        params.extend(group.split())
+    return params if params else None
+
+
+def _params_from_type_section(wat_text, type_id):
+    for tid, params_blob in _TYPE_DEF_RE.findall(wat_text):
+        if tid == type_id:
+            params = []
+            for group in _PARAM_RE.findall(params_blob):
+                params.extend(group.split())
+            return params
+    return None
+
+
+def get_func_param_types(wat_text, func_id):
+    escaped_id = re.escape(func_id)
+    header_pat = re.compile(r'\(func\s+' + escaped_id + r'\b')
+    m = header_pat.search(wat_text)
+    if not m:
+        return None
+
+    start = m.start()
+    next_func = re.search(r'\n\s*\(func\s', wat_text[m.end():])
+    end = m.end() + next_func.start() if next_func else len(wat_text)
+    block = wat_text[start:end]
+
+    inline = _params_from_inline_header(block)
+    if inline is not None:
+        return inline
+
+    type_ref = _TYPE_REF_RE.search(block)
+    if type_ref:
+        return _params_from_type_section(wat_text, type_ref.group(1))
+
+    return []
+
+
+def synthesize_args(param_types):
+    args = []
+    fully_supported = True
+    for t in param_types:
+        if t in DEFAULT_ARG_BY_TYPE:
+            args.append(DEFAULT_ARG_BY_TYPE[t])
+        else:
+            fully_supported = False
+            args.append("0")
+    return args, fully_supported
+
+
+def _looks_like_arg_mismatch(stderr_text):
+    if not stderr_text:
+        return False
+    return any(p.search(stderr_text) for p in ARG_COUNT_MISMATCH_PATTERNS)
+
+
+def _build_invoke_cmd(runtime_bin, wasm_path, target_name, args):
+    """
+    Builds the CLI invocation for whichever runtime binary was given.
+    Auto-detected from the binary's filename so callers (orig_metrics.py,
+    metrics_worker.py, run_swamped.py) never need to know or care which
+    runtime is in use -- point --wasmtime-bin at either binary and it
+    just works.
+
+    wasmtime : wasmtime --invoke <func> <file.wasm> <args...>
+    wasmer   : wasmer run <file.wasm> --invoke <func> -- <args...>
+               (verified against wasmerio/wasmer's CLI source,
+               lib/cli/src/commands/run/mod.rs: `run` is a required
+               subcommand in current wasmer, --invoke/-i takes the
+               function name, and positional `args` follow the input
+               file -- `--` is used here to unambiguously separate them
+               from any flags). wasmer's argument-count-mismatch error
+               text ("Function expected N arguments, but received M")
+               matches the same ARG_COUNT_MISMATCH_PATTERNS regex used
+               for wasmtime, so _looks_like_arg_mismatch() needs no change.
+    """
+    name = Path(runtime_bin).name.lower()
+    if "wasmer" in name:
+        return [str(runtime_bin), "run", str(wasm_path), "--invoke", target_name, "--"] + args
+    return [str(runtime_bin), "--invoke", target_name, str(wasm_path)] + args
+
+
+def run_wasm_with_inferred_args(wasmtime_bin, wasm_path, wat_text, timeout_s,
+                                 stdin_text="1\n", preferred_names=("_start", "main")):
+    result = {
+        "status": "no_entry", "func": None, "args": [],
+        "elapsed_s": None, "stdout": "", "stderr": "", "notes": [],
+    }
+
+    if not wasmtime_bin or not Path(wasmtime_bin).exists():
+        result["notes"].append("runtime_binary_missing")
+        return result
+
+    if not wat_text:
+        result["notes"].append("no_wat_text")
+        return result
+
+    exports = list_func_exports(wat_text)
+    if not exports:
+        return result
+
+    target_name = next((n for n in preferred_names if n in exports), None)
+    if target_name is None:
+        target_name = next(iter(exports))
+    func_id = exports[target_name]
+    result["func"] = target_name
+
+    param_types = get_func_param_types(wat_text, func_id)
+
+    if param_types is None:
+        result["status"] = "no_sig"
+        result["notes"].append("signature_recovery_failed")
+        args = []
+    else:
+        args, fully_supported = synthesize_args(param_types)
+        if not fully_supported:
+            result["notes"].append("unsupported_param_type_defaulted")
+        result["args"] = args
+
+    cmd = _build_invoke_cmd(wasmtime_bin, wasm_path, target_name, args)
+
+    t0 = time.time()
+    rc, out, err = run_cmd(cmd, timeout_s=timeout_s, input_text=stdin_text)
+    t1 = time.time()
+
+    result["stdout"], result["stderr"] = out, err
+
+    if rc == -1 and err == "timeout":
+        result["status"] = "timeout"
+    elif rc == 0:
+        result["status"] = "ok"
+        result["elapsed_s"] = round(t1 - t0, 6)
+    else:
+        if _looks_like_arg_mismatch(err) and param_types is None:
+            result["status"] = "no_sig"
+            result["notes"].append("confirmed_arg_mismatch")
+        else:
+            result["status"] = f"err:{rc}"
+
+    return result
+
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) != 3:
+        print("Usage: python wasm_runtime.py <wasmtime_bin> <file.wasm>")
+        sys.exit(1)
+    wasmtime_bin, wasm_path = sys.argv[1], sys.argv[2]
+    rc, wat, err = run_cmd(["wasm2wat", wasm_path])
+    if rc != 0:
+        print("wasm2wat failed:", err)
+        sys.exit(1)
+    res = run_wasm_with_inferred_args(wasmtime_bin, wasm_path, wat, timeout_s=10)
+    print(res)

@@ -1,0 +1,15 @@
+# requirements.txt -- dependances Python du pipeline d'evaluation SWAMPED
+#
+# Installation :
+#   pip install -r requirements.txt --break-system-packages
+#
+# IMPORTANT : ce pipeline invoque swamped_cli.py avec le meme interpreteur
+# Python que celui qui execute run_swamped.py (via sys.executable). Ces
+# dependances doivent donc etre installees dans CET environnement precis,
+# pas seulement dans un venv separe dedie a SWAMPED.
+
+rapidfuzz>=3.0         # wat_similarity (comparaison lexicale des .wat)
+numpy>=1.24            # cfg_similarity (signatures de noeuds CFG) + requis par strategies/state.py et code_perturbation.py de SWAMPED
+networkx>=3.0          # cfg_similarity (graphe de flot de controle)
+scipy>=1.10            # cfg_similarity (appariement optimal, Hungarian algorithm) + requis par strategies/state.py de SWAMPED (scipy.stats.beta)
+matplotlib>=3.5        # requis par strategies/code_perturbation.py de SWAMPED (import matplotlib.pyplot -- meme si non utilise a l'execution, l'import seul plante sans lui)

@@ -1,0 +1,9 @@
+# requirements.txt -- dependances Python du pipeline d'evaluation WasmMutate
+#
+# Installation :
+#   pip install -r requirements.txt --break-system-packages
+
+rapidfuzz>=3.0        # wat_similarity (comparaison lexicale des .wat)
+numpy>=1.24           # cfg_similarity (signatures de noeuds CFG)
+networkx>=3.0         # cfg_similarity (graphe de flot de controle)
+scipy>=1.10           # cfg_similarity (appariement optimal, Hungarian algorithm)
