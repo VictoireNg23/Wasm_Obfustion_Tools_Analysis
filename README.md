@@ -85,7 +85,7 @@ This framework allows you to:
   * binary-level metrics;
 * evaluate behavioral preservation through runtime execution;
 * analyze resistance against reverse-engineering and recovery tools;
-* verify formal validity and semantic equivalence using SpecTec.
+* verify formal validity using SpecTec.
 
 ---
 
